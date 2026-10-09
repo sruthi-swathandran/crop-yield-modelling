@@ -1,0 +1,39 @@
+name: cropyield
+
+channels:
+  - conda-forge
+
+dependencies:
+  - python=3.11
+
+  # Vector
+  - geopandas
+  - shapely
+  - pyproj
+  - fiona
+
+  # Raster and data cubes
+  - rasterio
+  - rioxarray
+  - xarray
+  - dask
+  - odc-stac
+
+  # Catalogue access
+  - pystac-client
+  - planetary-computer
+
+  # Modelling
+  - pandas
+  - numpy
+  - scikit-learn
+  - lightgbm
+
+  # Plotting and notebooks
+  - matplotlib
+  - jupyterlab
+
+  # Utilities
+  - requests
+  - python-dotenv
+  - tqdm

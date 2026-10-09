@@ -1,0 +1,32 @@
+# Data. Everything here is downloadable from the sources documented
+# in the README, and the rasters are far too large to commit.
+data/
+*.tif
+*.tiff
+*.nc
+*.hdf
+*.zip
+
+# Credentials. The NASS API key lives here.
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+.pytest_cache/
+*.egg-info/
+
+# Environments
+.venv/
+venv/
+env/
+
+# Model artefacts, which are reproducible from src/
+models/
+*.pkl
+*.joblib
+
+# OS
+Thumbs.db
+.DS_Store
