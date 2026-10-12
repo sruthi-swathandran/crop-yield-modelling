@@ -47,12 +47,47 @@ Nothing in `data/` is committed. Every source is public and the fetch scripts in
 
 ### Why MODIS and not Sentinel-2
 
-Sentinel-2 is 10 metres and starts in 2017, giving eight seasons. MODIS is 250
-metres and starts in 2000, giving more than twenty.
+The Cropland Data Layer stops at 2021. Sentinel-2 starts in 2017. Together those
+leave five seasons.
 
-Aggregating to county level discards the resolution advantage entirely: a county
-averages millions of pixels either way. Choosing the coarser sensor buys twelve
-extra years of training data and costs nothing that this problem can use.
+Five is not enough. The model has to learn how yield responds to weather, and
+weather varies between years rather than within them. Worse, 2012 falls outside
+that window, and 2012 is the most informative year in the dataset: mean yield
+across these eight states fell from 143 bushels per acre to 111. A model that has
+never seen a drought cannot be tested on one.
+
+MODIS reaches back to 2008 and gives fourteen seasons including that drought.
+
+The resolution Sentinel-2 would buy is resolution this question throws away.
+Both get averaged to a county containing millions of pixels. Ten metres matters
+for a field-level model and not for this one.
+
+There is also a practical weight. Sentinel-2 is 625 times more pixels per unit
+area, and MOD13Q1 arrives already composited and cloud-screened, where Sentinel-2
+needs its own cloud masking and gap-filling from irregular revisits.
+
+Fourteen seasons including a drought, at a resolution the question can use,
+against five seasons without one at a resolution it cannot.
+
+---
+
+## Planned extension: does 10 metre imagery predict yield any better?
+
+2017 to 2021 is covered by both sensors. That overlap makes a real ablation
+possible, run on the same counties, the same years and the same model:
+
+> Holding everything else constant, does a Sentinel-2 feature set predict
+> county corn yield better than a MODIS one?
+
+Nobody has a strong prior on the answer. The case for yes is that 10 metre
+pixels resolve field boundaries, so the crop mask is sharper and fewer mixed
+pixels dilute the signal. The case for no is that county aggregation averages
+away everything the finer grid resolved, and Sentinel-2's irregular cloud-limited
+revisits produce a worse time series than MODIS's clean composites.
+
+It reuses this pipeline rather than needing a new one, and it answers a question
+that practitioners actually argue about. To be built once the MODIS version is
+finished and evaluated, not alongside it.
 
 ---
 
