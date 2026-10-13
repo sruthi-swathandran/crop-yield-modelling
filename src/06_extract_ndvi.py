@@ -49,6 +49,8 @@ import planetary_computer as pc
 import pystac_client
 import rioxarray  # noqa: F401
 
+from runlog import tee_to
+
 ROOT = Path(__file__).resolve().parent.parent
 COUNTIES = ROOT / "data" / "counties.gpkg"
 MASKDIR = ROOT / "data" / "masks"
@@ -244,6 +246,7 @@ def main() -> None:
     ap.add_argument("--all", action="store_true")
     ap.add_argument("--year", type=int, default=2020)
     args = ap.parse_args()
+    tee_to("ndvi")
 
     counties = gpd.read_file(COUNTIES, layer="counties")
     cat = pystac_client.Client.open(STAC)
