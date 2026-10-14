@@ -34,7 +34,7 @@ yield of 161. Brackets are 95% intervals from resampling whole seasons.
    prediction made before it was run.** It matched gradient boosting there,
    and a one-parameter model on peak NDVI alone did far worse.
 6. **Most of the skill is available by late July and nearly all of it by late
-   August.** By late June there is none.
+   August.** By late June there is almost none.
 7. **Removing the yield trend made no measurable difference.** NDVI already
    tracks it.
 
@@ -190,6 +190,14 @@ Gradient boosting, detrended:
 
 The hardest scheme is 48% worse than the random one [39% to 57%].
 
+![RMSE by holdout scheme for gradient boosting, ridge regression and the light use efficiency model](figures/schemes.png)
+
+Much of the error under a held-out year is shared by every county in that
+season. With one year held out at a time, the mean error per season runs from
+18 bushels under to 13 over:
+
+![Mean error per held-out season](figures/bias_by_year.png)
+
 ### Space against time
 
 With only the single-district holdout, an unseen season looked clearly harder
@@ -238,6 +246,8 @@ How much worse each model gets from random folds to year and state held out:
 | k × peak NDVI | 1 | 27.9 | 29.0 | 1.04 [1.04, 1.04] |
 | Light use efficiency | 1 | 25.3 | 25.6 | 1.01 [1.01, 1.02] |
 
+![Rise in error from random folds to year and state held out, by model](figures/degradation.png)
+
 The light use efficiency model does degrade least. But degradation tracks the
 number of fitted parameters almost exactly, and models with no physics in them,
 one parameter on peak NDVI or a trend line, are nearly as stable. Against its
@@ -266,6 +276,16 @@ Before running it, I expected the light use efficiency model to fail worst in
 
 These intervals resample districts within the one season, so they describe
 spread across places in 2012 rather than uncertainty about droughts in general.
+
+![Map of 2012 county errors, gradient boosting, year and state held out](figures/error_map_2012.png)
+
+The map shows the overestimate is not uniform. Indiana, South Dakota and
+Illinois are overestimated by 29 to 37 bushels on average. Nebraska west
+of 99°W is the opposite: 32 counties underestimated by 58 on average. Much of
+Nebraska's corn is irrigated, which would keep yields up while the surrounding
+landscape browned, and a model trained without Nebraska has seen little of
+that. That explanation is a hypothesis; irrigated area per county has not been
+added to test it.
 
 The light use efficiency model and both statistical models are indistinguishable
 here, and all of them overpredict the drought. The trend line alone overpredicts
@@ -298,9 +318,11 @@ Gradient boosting refitted using only NDVI up to each cutoff:
 | Full season | 19.2 | 22.0 |
 | Trend line, for comparison | 33.3 | 34.1 |
 
-By late June the model is no better than the trend line. By late July it has
-most of its skill and by late August nearly all of it. The full season adds
-little after that.
+![Error by in-season cutoff](figures/in_season.png)
+
+By late June the model is barely better than the trend line. By late July it has
+about three quarters of its full-season skill and by late August nearly all of
+it.
 
 The current year's corn map is still used at every cutoff, and it would not
 exist yet in practice. Using the previous year's map instead needs the NDVI
@@ -463,6 +485,7 @@ NASS_API_KEY=your_key_here
 | `09_baseline_gbm.py` | Gradient boosting under four schemes | about 22 minutes |
 | `10_lue_model.py` | Light use efficiency model and comparison | seconds |
 | `11_robustness.py` | Stronger holdouts, controls, intervals, in-season, importance | about 8 minutes |
+| `12_figures.py` | The figures in this README | seconds |
 
 Scripts 05 and 06 save as they go and skip finished years when rerun. Every
 script prints progress and writes a log to `logs/`.
