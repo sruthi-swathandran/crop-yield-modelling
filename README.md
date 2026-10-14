@@ -37,6 +37,13 @@ yield of 161. Brackets are 95% intervals from resampling whole seasons.
    August.** By late June there is almost none.
 7. **Removing the yield trend made no measurable difference.** NDVI already
    tracks it.
+8. **Tuned the usual way, the model expected 14.4 bushels of error and got 22.0
+   on a held-out year and state.** Tuning on random inner folds picked the
+   largest, finest trees allowed in all 37 folds and improved only the random
+   score.
+   Tuning on held-out inner folds picked small trees, cost 1.5 on the random
+   score, and was the only version that improved the held-out one, by 0.6
+   [0.1, 1.1].
 
 Each is set out with its evidence below.
 
@@ -131,7 +138,7 @@ question, and it is the first planned extension.
 Gradient boosting and ridge predict departures from a linear yield trend fitted
 inside each training fold. Hyperparameters are fixed and identical across
 schemes. Tuning them on random folds would favour the random scheme, so tuning
-is treated as a separate experiment (planned).
+is a separate, nested experiment, reported below.
 
 The trend line is the bar to clear. A model that cannot beat a straight line in
 year has learned nothing from the satellite.
@@ -349,6 +356,55 @@ measures what a group adds, not what it contains. The early season matters more
 than expected and is not yet explained; planting date, cover crops and other
 crops in mixed pixels are all candidates.
 
+### Tuning
+
+Three versions of gradient boosting, scored on the same outer folds:
+
+- **Fixed:** the settings used everywhere else.
+- **Tuned on random inner folds:** random search over 16 settings, each judged
+  on random folds of the training rows. The usual way.
+- **Tuned on held-out inner folds:** the same 16 settings, each judged on inner
+  folds that hold out a block of years and a block of states together, copying
+  the outer test.
+
+The tuning is nested: inside each outer fold the search sees only that fold's
+training rows, and the chosen setting is scored once on outer test rows that
+played no part in choosing it. The held-out outer test here deals years into
+four interleaved blocks and holds out one state within one block, 32 folds in
+all. It is a coarser version of the year and state scheme above, which at 112
+folds would have needed about 25,000 fits.
+
+| Outer test | Fixed | Tuned, random inner | Tuned, held-out inner |
+|---|---|---|---|
+| Random folds | 14.8 | 14.4 | 16.3 |
+| Year and state held out | 21.9 | 22.0 | 21.3 |
+
+Paired against fixed: tuning on random inner folds improved the random score
+by 0.4 [0.3, 0.6] and changed the held-out score by +0.1 [-0.2, 0.3], nothing
+measurable. Tuning on held-out inner folds made the random score worse by 1.5
+[1.2, 1.8] and the held-out score better by 0.6 [0.1, 1.1]. The ranking of the
+three versions reverses between the two tests.
+
+What each chose explains it. Tuned on random inner folds, the search picked the
+same setting in all 37 outer folds: 127 leaves with a minimum of 5 rows per
+leaf, the largest and finest trees the search space allowed. Tuned on held-out inner folds, the median choice was 7 to 15
+leaves with a slower learning rate. Random inner folds reward trees fine enough
+to recognise individual neighbourhoods.
+
+The larger problem is the estimate that tuning reports:
+
+![What tuning expected against what it got](figures/tuning.png)
+
+Tuned the usual way, the inner folds put the error at 14.4. On a held-out year
+and state it was 22.0, 53% higher. Tuned on held-out inner folds, the inner
+estimate was 22.5 against an actual 21.3, slightly pessimistic, which is the
+safer direction to be wrong in.
+
+The gain from tuning properly is small, 0.6 bushels. The case for doing it is
+less about that gain than about the number reported at the end of tuning,
+which is only trustworthy if the inner folds ask the same question as the
+outer ones.
+
 ### Detrending
 
 Yields rise 2.9 bushels per acre per year across this period. Removing a fitted
@@ -390,22 +446,15 @@ Kept here because each one changed a number.
   light use efficiency model come mostly from fAPAR.
 - **Mixed pixels.** A 250 m pixel is 5.4 ha and seldom all corn. Corn weighting
   reduces the dilution from other crops without removing it.
-- **No tuning.** Gradient boosting runs on fixed settings. Whether tuning helps
-  under the strict schemes is an open question, below.
+- **Small search.** Tuning tried 16 settings with 3 inner folds. A larger
+  search could find more, though the direction of the result is unlikely to
+  change given how consistently each kind of tuning chose.
 - **Counties with published yields only.** NASS withholds county estimates where
   too few farms report, and those counties are not random.
 
 ---
 
 ## Planned extensions
-
-### Tuning that does not leak
-
-Tune gradient boosting three ways (not at all, with random inner folds, and with
-inner folds held out by year and region) and score all three under year and state
-held out. If conventional tuning improves the random score while worsening the
-held-out one, that is a concrete demonstration of the problem this project is
-about.
 
 ### Does 10 metre imagery predict yield any better?
 
@@ -486,6 +535,9 @@ NASS_API_KEY=your_key_here
 | `10_lue_model.py` | Light use efficiency model and comparison | seconds |
 | `11_robustness.py` | Stronger holdouts, controls, intervals, in-season, importance | about 8 minutes |
 | `12_figures.py` | The figures in this README | seconds |
+| `13_tuning.py` | Nested tuning, three versions compared | about 45 minutes |
+
+`12_figures.py` draws the tuning figure only once `13_tuning.py` has run.
 
 Scripts 05 and 06 save as they go and skip finished years when rerun. Every
 script prints progress and writes a log to `logs/`.

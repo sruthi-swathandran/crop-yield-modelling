@@ -186,6 +186,31 @@ def fig_in_season(out):
     save(fig, out, "in_season.png")
 
 
+def fig_tuning(out):
+    ch = pd.read_csv(RES / "tuning_choices.csv")
+    sc = pd.read_csv(RES / "tuning_scores.csv").set_index(["scheme", "model"]).rmse
+    d = ch[ch.scheme == "year_state"].groupby("inner").inner_rmse.mean()
+    rows = [("Tuned on random\ninner folds", d["random"], sc[("year_state", "tuned_random")]),
+            ("Tuned on held-out\ninner folds", d["blocked"], sc[("year_state", "tuned_blocked")])]
+
+    fig, ax = plt.subplots(figsize=(7, 3.6))
+    x = np.arange(len(rows))
+    ax.bar(x - 0.18, [r[1] for r in rows], 0.36, color="#bbbbbb",
+           label="What tuning expected (inner folds)")
+    ax.bar(x + 0.18, [r[2] for r in rows], 0.36, color=C["gbm_detrended"],
+           label="What it got (year and state held out)")
+    for i, r in enumerate(rows):
+        ax.text(i - 0.18, r[1] + 0.3, f"{r[1]:.1f}", ha="center", fontsize=9)
+        ax.text(i + 0.18, r[2] + 0.3, f"{r[2]:.1f}", ha="center", fontsize=9)
+    ax.set_xticks(x, [r[0] for r in rows])
+    ax.set_ylabel("RMSE, bu/acre")
+    ax.legend(frameon=False, loc="upper center", bbox_to_anchor=(0.5, -0.18), ncol=2)
+    r0 = rows[0]
+    ax.set_title(f"Tuned the usual way, the model expected {r0[1]:.1f} bushels of error\n"
+                 f"and got {r0[2]:.1f} on a held-out year and state")
+    save(fig, out, "tuning.png")
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", type=Path, default=ROOT / "figures")
@@ -197,6 +222,8 @@ def main() -> None:
     fig_bias_by_year(args.out)
     fig_2012_map(args.out)
     fig_in_season(args.out)
+    if (RES / "tuning_choices.csv").exists():
+        fig_tuning(args.out)
 
 
 if __name__ == "__main__":

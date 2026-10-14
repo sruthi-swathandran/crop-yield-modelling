@@ -1,0 +1,75 @@
+scheme,fold,inner,inner_rmse,num_leaves,min_child_samples,learning_rate,n_estimators,subsample,colsample_bytree,reg_lambda
+random,fold 1,random,15.106985958185598,127,5,0.03,1000,0.6,1.0,1.0
+random,fold 1,blocked,21.918947734429423,7,20,0.01,500,1.0,0.8,0.0
+random,fold 2,random,15.012543370058895,127,5,0.03,1000,0.6,1.0,1.0
+random,fold 2,blocked,22.370264505072974,127,100,0.01,500,0.6,0.5,0.0
+random,fold 3,random,14.99917991884857,127,5,0.03,1000,0.6,1.0,1.0
+random,fold 3,blocked,23.57908104414803,15,5,0.01,1000,1.0,0.5,1.0
+random,fold 4,random,14.877325899885959,127,5,0.03,1000,0.6,1.0,1.0
+random,fold 4,blocked,21.462294643835932,7,10,0.01,500,1.0,0.8,10.0
+random,fold 5,random,14.994417145951905,127,5,0.03,1000,0.6,1.0,1.0
+random,fold 5,blocked,25.732482494154873,127,100,0.01,500,0.6,0.5,0.0
+year_state,IA block 0,random,14.62878970485228,127,5,0.03,1000,0.6,1.0,1.0
+year_state,IA block 0,blocked,23.081213662761407,7,20,0.01,500,1.0,0.8,0.0
+year_state,IA block 1,random,15.416082341014185,127,5,0.03,1000,0.6,1.0,1.0
+year_state,IA block 1,blocked,23.876894033039584,15,5,0.01,1000,1.0,0.5,1.0
+year_state,IA block 2,random,15.101736426207996,127,5,0.03,1000,0.6,1.0,1.0
+year_state,IA block 2,blocked,22.318048685830842,7,10,0.01,500,1.0,0.8,10.0
+year_state,IA block 3,random,14.978822479842435,127,5,0.03,1000,0.6,1.0,1.0
+year_state,IA block 3,blocked,21.57729669096671,15,5,0.03,500,0.8,1.0,0.0
+year_state,IL block 0,random,14.500533805616385,127,5,0.03,1000,0.6,1.0,1.0
+year_state,IL block 0,blocked,23.347255041973604,127,5,0.03,1000,0.6,1.0,1.0
+year_state,IL block 1,random,15.169970091346672,127,5,0.03,1000,0.6,1.0,1.0
+year_state,IL block 1,blocked,25.244287468320717,7,10,0.01,500,1.0,0.8,10.0
+year_state,IL block 2,random,14.539992844521416,127,5,0.03,1000,0.6,1.0,1.0
+year_state,IL block 2,blocked,20.60401084415598,7,100,0.01,500,1.0,1.0,10.0
+year_state,IL block 3,random,14.685703416311934,127,5,0.03,1000,0.6,1.0,1.0
+year_state,IL block 3,blocked,22.87681748223215,127,100,0.01,500,0.6,0.5,0.0
+year_state,IN block 0,random,14.204476962709899,127,5,0.03,1000,0.6,1.0,1.0
+year_state,IN block 0,blocked,21.90568647106426,7,10,0.01,500,1.0,0.8,10.0
+year_state,IN block 1,random,15.023198743074563,127,5,0.03,1000,0.6,1.0,1.0
+year_state,IN block 1,blocked,20.043018004798274,7,10,0.01,500,1.0,0.8,10.0
+year_state,IN block 2,random,14.307535582791605,127,5,0.03,1000,0.6,1.0,1.0
+year_state,IN block 2,blocked,22.926244632762927,7,10,0.01,500,1.0,0.8,10.0
+year_state,IN block 3,random,14.215908609717877,127,5,0.03,1000,0.6,1.0,1.0
+year_state,IN block 3,blocked,27.207810904029238,7,20,0.01,200,1.0,0.5,1.0
+year_state,MN block 0,random,14.32438221404857,127,5,0.03,1000,0.6,1.0,1.0
+year_state,MN block 0,blocked,21.80004309817605,15,5,0.03,500,0.8,1.0,0.0
+year_state,MN block 1,random,15.089305743173897,127,5,0.03,1000,0.6,1.0,1.0
+year_state,MN block 1,blocked,22.868401602607964,15,5,0.01,1000,1.0,0.5,1.0
+year_state,MN block 2,random,14.80626579908846,127,5,0.03,1000,0.6,1.0,1.0
+year_state,MN block 2,blocked,21.063371726497202,7,10,0.01,500,1.0,0.8,10.0
+year_state,MN block 3,random,14.59504095786112,127,5,0.03,1000,0.6,1.0,1.0
+year_state,MN block 3,blocked,25.998017902241617,7,20,0.01,200,1.0,0.5,1.0
+year_state,MO block 0,random,13.173623815121525,127,5,0.03,1000,0.6,1.0,1.0
+year_state,MO block 0,blocked,20.840410091269586,15,5,0.01,1000,1.0,0.5,1.0
+year_state,MO block 1,random,13.755748105028735,127,5,0.03,1000,0.6,1.0,1.0
+year_state,MO block 1,blocked,22.083049707945634,127,100,0.01,500,0.6,0.5,0.0
+year_state,MO block 2,random,13.609291577910485,127,5,0.03,1000,0.6,1.0,1.0
+year_state,MO block 2,blocked,21.03287588491113,15,5,0.01,1000,1.0,0.5,1.0
+year_state,MO block 3,random,13.288799789716643,127,5,0.03,1000,0.6,1.0,1.0
+year_state,MO block 3,blocked,22.185538299363987,15,5,0.01,1000,1.0,0.5,1.0
+year_state,NE block 0,random,13.635052537432902,127,5,0.03,1000,0.6,1.0,1.0
+year_state,NE block 0,blocked,23.603333550966493,7,10,0.01,500,1.0,0.8,10.0
+year_state,NE block 1,random,14.412598883084847,127,5,0.03,1000,0.6,1.0,1.0
+year_state,NE block 1,blocked,24.69854183963922,7,20,0.01,500,1.0,0.8,0.0
+year_state,NE block 2,random,13.924981860876239,127,5,0.03,1000,0.6,1.0,1.0
+year_state,NE block 2,blocked,18.931133855346104,7,10,0.01,500,1.0,0.8,10.0
+year_state,NE block 3,random,13.846826413444397,127,5,0.03,1000,0.6,1.0,1.0
+year_state,NE block 3,blocked,22.517558492734683,7,10,0.01,500,1.0,0.8,10.0
+year_state,OH block 0,random,14.416311751771111,127,5,0.03,1000,0.6,1.0,1.0
+year_state,OH block 0,blocked,19.947516528811583,7,20,0.01,500,1.0,0.8,0.0
+year_state,OH block 1,random,15.162036453682019,127,5,0.03,1000,0.6,1.0,1.0
+year_state,OH block 1,blocked,21.906878458378415,7,10,0.01,500,1.0,0.8,10.0
+year_state,OH block 2,random,14.703601387124726,127,5,0.03,1000,0.6,1.0,1.0
+year_state,OH block 2,blocked,22.387697805407736,7,10,0.01,500,1.0,0.8,10.0
+year_state,OH block 3,random,14.709323636861791,127,5,0.03,1000,0.6,1.0,1.0
+year_state,OH block 3,blocked,21.826590225810488,7,10,0.01,500,1.0,0.8,10.0
+year_state,SD block 0,random,13.773203458038726,127,5,0.03,1000,0.6,1.0,1.0
+year_state,SD block 0,blocked,22.5266022674966,7,10,0.01,500,1.0,0.8,10.0
+year_state,SD block 1,random,14.51309345068884,127,5,0.03,1000,0.6,1.0,1.0
+year_state,SD block 1,blocked,21.361721976349425,7,10,0.01,500,1.0,0.8,10.0
+year_state,SD block 2,random,14.05800212269604,127,5,0.03,1000,0.6,1.0,1.0
+year_state,SD block 2,blocked,23.554375678940236,7,10,0.01,500,1.0,0.8,10.0
+year_state,SD block 3,random,13.89184752987388,127,5,0.03,1000,0.6,1.0,1.0
+year_state,SD block 3,blocked,24.61668201182353,7,20,0.01,200,1.0,0.5,1.0
