@@ -1,0 +1,8 @@
+# Keep line endings as LF in the repository and the working copy, which
+# stops git warning about LF to CRLF conversion on every add.
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.parquet binary
+*.npz binary

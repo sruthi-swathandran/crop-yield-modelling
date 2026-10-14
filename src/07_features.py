@@ -47,10 +47,10 @@ than an assumption.
 
 THE TREND PROBLEM
 -----------------
-Yields rose 2.1 bushels per acre per year across this period through
-breeding and management, independent of weather. That is +21% over
-sixteen years, and over twelve years it is worth about as much as the
-2012 drought cost.
+Across 2008 to 2021 the mean county yield in this table rises 2.9
+bushels per acre per year, through breeding and management rather than
+weather. That is about 37 bushels over the period, more than the 33
+that separate 2011 from the 2012 drought.
 
 A model given the year can learn that trend and look like it is
 predicting yield while really predicting the calendar. So year is not
@@ -76,40 +76,55 @@ FIRST_DOY = 81          # composite 1 starts on day 081, 21 or 22 March
 N_COMPOSITES = 14       # days 081 to 289, present in every year
 
 
-def phenology(g: pd.DataFrame) -> pd.Series:
-    """Summarise one county-year's curve."""
-    g = g.sort_values("composite")
-    v = g.ndvi.to_numpy(dtype="float64")
-    idx = g.composite.to_numpy()
+def phenology(comp: np.ndarray, v: np.ndarray) -> dict | None:
+    """Summarise one county-year's curve, or None if it is too gappy.
 
-    if np.isfinite(v).sum() < 8:
+    Works on composite numbers rather than array positions, so a
+    cloud-lost composite in the middle of the season does not shrink
+    the distance between two others.
+    """
+    ok = np.isfinite(v)
+    if ok.sum() < 8:
         # Fewer than eight usable composites cannot describe a season.
-        return pd.Series(dtype="float64")
+        return None
+    c, x = comp[ok], v[ok]
 
-    peak_i = int(np.nanargmax(v))
-    peak = float(v[peak_i])
-    first, last = float(np.nanmin(v[:3])), float(np.nanmean(v[-2:]))
+    # Season totals are taken over the curve interpolated across all
+    # fourteen composites. Summing only the values present would give a
+    # cloudy county-year a lower integral for having fewer numbers, and
+    # cloudiness is not yield.
+    full = np.interp(np.arange(1, N_COMPOSITES + 1), c, x)
 
-    # Green-up and senescence as slopes per composite, which is per
-    # 16 days. Computed from the trough before the peak rather than
-    # from composite 1, because a late spring shifts the start.
-    trough_i = int(np.nanargmin(v[: peak_i + 1])) if peak_i > 0 else 0
-    greenup = (peak - v[trough_i]) / max(peak_i - trough_i, 1)
-    senesc = (v[-1] - peak) / max(len(v) - 1 - peak_i, 1)
+    p = int(np.argmax(x))
+    peak = float(x[p])
 
-    return pd.Series({
+    # Start and end of season from the composites that exist there.
+    # If clouds took all three early composites, start is missing
+    # rather than invented; the model handles missing values.
+    early, late = x[c <= 3], x[c >= N_COMPOSITES - 1]
+    start = float(early.min()) if early.size else np.nan
+    end = float(late.mean()) if late.size else np.nan
+
+    # Green-up and senescence as NDVI change per composite, which is
+    # per 16 days. Green-up runs from the trough before the peak rather
+    # than from composite 1, because a late spring shifts the start.
+    t = int(np.argmin(x[: p + 1]))
+    greenup = (peak - x[t]) / max(c[p] - c[t], 1)
+    senesc = (x[-1] - peak) / max(c[-1] - c[p], 1)
+
+    return {
         "ndvi_peak": peak,
-        "ndvi_peak_composite": float(idx[peak_i]),
-        "ndvi_mean": float(np.nanmean(v)),
-        "ndvi_integral": float(np.nansum(v)),          # season-long greenness
-        "ndvi_start": first,
-        "ndvi_end": last,
-        "ndvi_amplitude": peak - first,
+        "ndvi_peak_composite": float(c[p]),
+        "ndvi_mean": float(full.mean()),
+        "ndvi_integral": float(full.sum()),          # season-long greenness
+        "ndvi_start": start,
+        "ndvi_end": end,
+        "ndvi_amplitude": peak - start,
         "greenup_rate": float(greenup),
         "senescence_rate": float(senesc),
-        "composites_above_0.7": float(np.nansum(v > 0.7)),
-        "composites_usable": float(np.isfinite(v).sum()),
-    })
+        "composites_above_0.7": float((full > 0.7).sum()),
+        "composites_usable": float(ok.sum()),
+    }
 
 
 def main() -> None:
@@ -140,16 +155,26 @@ def main() -> None:
     ndvi = ndvi[ndvi.composite.between(1, N_COMPOSITES)].copy()
     print(f"  trimmed to composites 1 to {N_COMPOSITES} in every year")
 
-    # --- the curve, as fifteen columns ---------------------------
+    # --- the curve, as fourteen columns --------------------------
     wide = (ndvi.pivot_table(index=["fips", "year"],
                              columns="composite", values="ndvi")
             .rename(columns=lambda c: f"ndvi_{int(c):02d}"))
 
     # --- phenology ------------------------------------------------
-    phen = (ndvi.groupby(["fips", "year"], group_keys=True)
-            .apply(phenology, include_groups=False)
-            .dropna(how="all"))
-    print(f"  county-years with a usable curve: {len(phen):,}")
+    # Built as a list of records rather than with groupby.apply. When
+    # some groups return nothing, apply silently changes shape and
+    # stacks every feature into one long column, which is what broke
+    # the first run.
+    recs, groups = [], ndvi.sort_values("composite").groupby(["fips", "year"])
+    for (fips, year), g in groups:
+        r = phenology(g.composite.to_numpy(), g.ndvi.to_numpy(dtype="float64"))
+        if r is not None:
+            recs.append({"fips": fips, "year": year, **r})
+    phen = pd.DataFrame(recs).set_index(["fips", "year"])
+    print(f"  county-years: {groups.ngroups:,}   with a usable curve: "
+          f"{len(phen):,}   too gappy: {groups.ngroups - len(phen):,}")
+    print(f"  missing start of season (early composites all cloud): "
+          f"{phen.ndvi_start.isna().sum():,}")
 
     # --- how much corn, and how much of the county was readable ---
     masks = {}
