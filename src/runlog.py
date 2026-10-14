@@ -12,6 +12,7 @@ The log is appended to rather than overwritten, with a header line per
 run, so a rerun after a crash keeps the record of the run that crashed.
 """
 
+import atexit
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -25,12 +26,18 @@ class _Tee:
 
     def write(self, s):
         for st in self.streams:
-            st.write(s)
-            st.flush()
+            try:
+                st.write(s)
+                st.flush()
+            except (ValueError, OSError):
+                pass        # the log file closed during interpreter shutdown
 
     def flush(self):
         for st in self.streams:
-            st.flush()
+            try:
+                st.flush()
+            except (ValueError, OSError):
+                pass
 
     def __getattr__(self, name):
         # isatty, encoding and the rest come from the terminal stream
@@ -44,5 +51,17 @@ def tee_to(name: str) -> Path:
     f.write(f"\n===== run started {datetime.now():%Y-%m-%d %H:%M:%S} =====\n")
     sys.stdout = _Tee(sys.__stdout__, f)
     sys.stderr = _Tee(sys.__stderr__, f)      # tracebacks land in the log too
+    # Hand the real streams back before the file closes at exit. Without
+    # this, libraries that write warnings during shutdown hit a closed
+    # file, which printed "Error in sys.excepthook" after the probe.
+    atexit.register(_restore, f)
     print(f"logging to {path}")
     return path
+
+
+def _restore(f):
+    sys.stdout, sys.stderr = sys.__stdout__, sys.__stderr__
+    try:
+        f.close()
+    except (ValueError, OSError):
+        pass

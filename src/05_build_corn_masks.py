@@ -32,6 +32,20 @@ matched locally against each county's bounds.
 And several 30 m COGs opened lazily, so every clip re-reads over HTTP.
 Each CDL tile is now read once into memory and clipped from the array.
 
+A KNOWN EDGE ARTEFACT, MEASURED AND LEFT IN PLACE
+-------------------------------------------------
+The corn map is read with clip_box on the county's bounding box and no
+margin. A MODIS pixel lying across that box edge is averaged from only
+the 30 m pixels inside it, so a sliver can read as 0 or 1 when the
+whole pixel would not. 14_build_masks_recent.py rebuilt 2021 from a
+second source with a margin and compared every county: 71 of 742
+differed, 97% of the differing pixels lie outside the county outline
+(which 06 never weights), widening the margin from 60 m to 500 m changed
+none of them, and the largest share of in-county corn weight affected
+was 0.031%. That moves a county's NDVI by well under 0.001. The masks
+are kept as built so that published results reproduce; masks from 2022
+on use the margin.
+
 SIGNING
 -------
 Tokens are stamped on at read time rather than at search time. The

@@ -39,8 +39,14 @@ restructured.
 """
 
 import argparse
+import os
 import time
 from pathlib import Path
+
+# Let GDAL retry a failed or truncated HTTP read before raising. This
+# changes how a network error is handled, never what a pixel holds.
+os.environ.setdefault("GDAL_HTTP_MAX_RETRY", "5")
+os.environ.setdefault("GDAL_HTTP_RETRY_DELAY", "3")
 
 import geopandas as gpd
 import numpy as np
@@ -128,7 +134,16 @@ def run_year(cat, counties, year):
             ).items()
             if i.id.startswith("MOD")        # Terra only, see 03b
         ]
-        its.sort(key=lambda i: i.properties["start_datetime"])
+        # The catalogue can list one composite more than once: 2021 has
+        # 14 September three times, with identical pixels. Keep one item
+        # per start date, the last by id, which is the latest production.
+        by_date = {}
+        for it in sorted(its, key=lambda i: i.id):
+            by_date[it.properties["start_datetime"]] = it
+        if len(by_date) < len(its):
+            print(f"    h{h:02d}v{v:02d}: {len(its) - len(by_date)} duplicate "
+                  f"item(s) dropped")
+        its = sorted(by_date.values(), key=lambda i: i.properties["start_datetime"])
         if not its:
             continue
         items_by_tile[(h, v)] = its
@@ -245,13 +260,19 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--all", action="store_true")
     ap.add_argument("--year", type=int, default=2020)
+    ap.add_argument("--years", help="a range such as 2022-2024")
     args = ap.parse_args()
     tee_to("ndvi")
 
     counties = gpd.read_file(COUNTIES, layer="counties")
     cat = pystac_client.Client.open(STAC)
 
-    for y in (list(YEARS) if args.all else [args.year]):
+    if args.years:
+        a, b = (int(x) for x in args.years.split("-"))
+        todo = list(range(a, b + 1))
+    else:
+        todo = list(YEARS) if args.all else [args.year]
+    for y in todo:
         if (OUTDIR / f"ndvi_{y}.parquet").exists():
             print(f"{y}: already done, skipping")
             continue

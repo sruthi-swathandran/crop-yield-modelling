@@ -138,6 +138,21 @@ def main() -> None:
     print(f"  rows {len(ndvi):,}  counties {ndvi.fips.nunique()}  "
           f"years {ndvi.year.min()}-{ndvi.year.max()}")
 
+    # The catalogue listed 2021's 14 September composite three times,
+    # so 06 wrote three rows per county for that date. The copies are
+    # identical; dropping them changed no model feature (checked: largest
+    # difference 0.0). Identical copies are dropped, differing ones stop
+    # the run, because then it is not clear which is right.
+    dup = ndvi.duplicated(["fips", "date"], keep=False)
+    if dup.any():
+        spread = (ndvi[dup].groupby(["fips", "date"]).ndvi
+                  .agg(lambda s: s.max() - s.min()).max())
+        print(f"  duplicate county-dates: {dup.sum():,} rows, "
+              f"dates {sorted(ndvi[dup].date.unique())}, largest spread {spread}")
+        if spread > 1e-9:
+            raise SystemExit("duplicates disagree; inspect 06 output")
+        ndvi = ndvi.drop_duplicates(["fips", "date"]).reset_index(drop=True)
+
     # Composite number from day of year rather than by counting rows.
     # Counting would shift every later column by one if a single
     # composite were missing for a county, and nothing would error.

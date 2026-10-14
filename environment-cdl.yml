@@ -1,0 +1,23 @@
+# A second, small environment for reading the Cropland Data Layer from
+# Source Cooperative (2022 onward). The store uses Icechunk format 2,
+# which needs icechunk 2.x, which needs Python 3.12 or later. The main
+# cropyield environment stays on Python 3.11 so that every result
+# already published reproduces exactly; this one only builds corn masks
+# and runs the probes that need the store.
+name: cropyield-cdl
+
+channels:
+  - conda-forge
+
+dependencies:
+  - python=3.12
+  - icechunk>=2
+  - zarr>=3
+  - xarray
+  - rioxarray
+  - rasterio
+  - geopandas
+  - pystac-client
+  - planetary-computer
+  - numpy
+  - pandas
