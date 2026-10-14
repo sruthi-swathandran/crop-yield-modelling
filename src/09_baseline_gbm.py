@@ -92,6 +92,11 @@ PARAMS = dict(
     n_estimators=500, learning_rate=0.03, num_leaves=31,
     min_child_samples=20, subsample=0.8, subsample_freq=1,
     colsample_bytree=0.8, random_state=SEED, verbose=-1,
+    # Reproducibility. LightGBM's multithreaded histogram sums depend on
+    # the order threads finish in, so the same seed gave slightly
+    # different trees on two machines. A fixed thread count and the
+    # deterministic flag make reruns identical.
+    deterministic=True, force_row_wise=True, num_threads=4,
 )
 
 

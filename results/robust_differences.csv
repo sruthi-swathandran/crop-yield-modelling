@@ -1,0 +1,34 @@
+comparison,first,second,difference,lo95,hi95,clear
+detrended minus raw,gbm_detrended / random,gbm_raw / random,0.05424428715647345,-0.554016098685716,0.6971429819388483,no
+detrended minus raw,gbm_detrended / year,gbm_raw / year,0.23168010600334554,-1.4847236042928778,2.301983740438894,no
+detrended minus raw,gbm_detrended / region,gbm_raw / region,-0.0032964457377033796,-0.6409422441990044,0.7001009842091063,no
+detrended minus raw,gbm_detrended / both,gbm_raw / both,0.2478808867172937,-1.4315847968521855,2.2011942895271908,no
+boosting minus LUE,gbm_detrended / random,lue_1 / random,-10.499555791713155,-11.377035885098804,-9.560712844465876,yes
+LUE minus k x peak NDVI,lue_1 / random,peak_k / random,-2.5508102066649982,-7.151514517811797,1.1125507504537209,no
+boosting minus ridge,gbm_detrended / random,ridge / random,-3.4092968627877998,-4.207959694920068,-2.6948912183459637,yes
+boosting minus LUE,gbm_detrended / year,lue_1 / year,-6.336889836101456,-8.105678028778831,-4.642494912017519,yes
+LUE minus k x peak NDVI,lue_1 / year,peak_k / year,-3.0080528077367426,-7.933550717834941,0.9028009593768023,no
+boosting minus ridge,gbm_detrended / year,ridge / year,-0.8490009278469692,-1.3453515019806075,-0.29764381107000104,yes
+boosting minus LUE,gbm_detrended / region,lue_1 / region,-8.77633276917701,-9.65149384964339,-7.852487201515574,yes
+LUE minus k x peak NDVI,lue_1 / region,peak_k / region,-2.577602404857423,-7.154575093566549,1.0636917762309142,no
+boosting minus ridge,gbm_detrended / region,ridge / region,-2.2060346264814577,-2.9852047757918987,-1.4835491497649704,yes
+boosting minus LUE,gbm_detrended / region_buffer,lue_1 / region_buffer,-5.96008670596202,-7.208317871640506,-4.8001163117739365,yes
+LUE minus k x peak NDVI,lue_1 / region_buffer,peak_k / region_buffer,-2.7913507946029767,-7.275254524387549,0.7973854142731026,no
+boosting minus ridge,gbm_detrended / region_buffer,ridge / region_buffer,-0.4253150964624304,-0.8634852193572354,0.0694886936448239,no
+boosting minus LUE,gbm_detrended / state,lue_1 / state,-5.113312039335781,-6.42259072703786,-3.8589816856781347,yes
+LUE minus k x peak NDVI,lue_1 / state,peak_k / state,-2.961838429951502,-7.444838430519945,0.608505048389889,no
+boosting minus ridge,gbm_detrended / state,ridge / state,0.15578051571583984,-0.24031159754764822,0.6231401772100327,no
+boosting minus LUE,gbm_detrended / both,lue_1 / both,-5.4684674126795585,-7.244885435082539,-3.7665135698859125,yes
+LUE minus k x peak NDVI,lue_1 / both,peak_k / both,-3.0297826478573526,-7.940297962677629,0.8667617792710579,no
+boosting minus ridge,gbm_detrended / both,ridge / both,-0.3408882454368012,-0.9144835244687244,0.23058118936618488,no
+boosting minus LUE,gbm_detrended / both_state,lue_1 / both_state,-3.644157227003177,-5.514260509204156,-1.8145099215691913,yes
+LUE minus k x peak NDVI,lue_1 / both_state,peak_k / both_state,-3.3909091482319873,-8.149813912955393,0.4286932327661757,no
+boosting minus ridge,gbm_detrended / both_state,ridge / both_state,0.48900523760099546,-0.08598791455589144,0.992065886664185,no
+cost of the operational holdout,gbm_detrended / both_state,gbm_detrended / random,7.1535483260585355,5.660098515032992,8.928845389238205,yes
+cost of the operational holdout,lue_1 / both_state,lue_1 / random,0.298149761348558,0.1928561134376733,0.40182583804555283,yes
+cost of the operational holdout,peak_k / both_state,peak_k / random,1.138248702915547,0.9293977555523358,1.358725707197238,yes
+cost of the operational holdout,ridge / both_state,ridge / random,3.2552462256697403,2.509373627916405,4.14068547582044,yes
+buffered minus plain district,gbm_detrended / region_buffer,gbm_detrended / region,2.9877904897121397,2.3341831377268614,3.7994336359057876,yes
+state minus district,gbm_detrended / state,gbm_detrended / region,3.7611821672948373,2.9375990789614503,4.697128438937744,yes
+unseen year minus unseen state,gbm_detrended / year,gbm_detrended / state,-1.2887997291430757,-2.093919054125168,-0.4654831244338275,yes
+unseen year minus unseen district,gbm_detrended / year,gbm_detrended / region,2.4723824381517616,1.2356756513699902,3.7733059912412727,yes
