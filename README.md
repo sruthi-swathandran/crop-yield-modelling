@@ -1,11 +1,13 @@
 # Predicting county corn yields from satellite time series
 
-US county corn yields from MODIS NDVI, 2008 to 2021, across 721 counties in
-eight Corn Belt states. The project tests how much accuracy a random train-test
+US county corn yields from MODIS NDVI, trained on 2008 to 2021 across 721
+counties in eight Corn Belt states and tested on 2022 to 2024, three seasons
+the models never saw. The project tests how much accuracy a random train-test
 split invents, and whether a model with a physical basis transfers to unseen
 places better than a flexible one.
 
-Status: **core analysis complete.** Extensions are listed at the end.
+Status: **core analysis and out-of-time test complete.** Remaining extensions
+are listed at the end.
 
 ---
 
@@ -35,8 +37,11 @@ yield of 161. Brackets are 95% intervals from resampling whole seasons.
    and a one-parameter model on peak NDVI alone did far worse.
 6. **Most of the skill is available by late July and nearly all of it by late
    August.** By late June there is almost none.
-7. **Removing the yield trend made no measurable difference.** NDVI already
-   tracks it.
+7. **Removing the yield trend made no difference inside the record and a large
+   one beyond it.** Within 2008 to 2021 the two versions were within 0.25
+   bushels. Predicting 2022 to 2024, the model trained on raw yield was 4.9
+   [2.9, 7.0] worse and underestimated 2024 by 34, because trees cannot
+   predict above the yields they were trained on.
 8. **Tuned the usual way, the model expected 14.4 bushels of error and got 22.0
    on a held-out year and state.** Tuning on random inner folds picked the
    largest, finest trees allowed in all 37 folds and improved only the random
@@ -44,6 +49,11 @@ yield of 161. Brackets are 95% intervals from resampling whole seasons.
    Tuning on held-out inner folds picked small trees, cost 1.5 on the random
    score, and was the only version that improved the held-out one, by 0.6
    [0.1, 1.1].
+9. **On three seasons after the training period, the held-out-year estimates
+   proved about 10% optimistic.** Gradient boosting scored 21.4 on 2022 to
+   2024 against the 19.1 that holding out years had promised, and 23.9 with
+   the state held out as well, against 22.0. Both land at or inside the upper
+   edge of the earlier intervals.
 
 Each is set out with its evidence below.
 
@@ -83,11 +93,15 @@ The in-season test below asks what is known earlier.
 
 | Source | What | Period |
 |---|---|---|
-| USDA NASS Quick Stats | County corn grain yields, bushels per acre | 2008 to 2021 |
-| USDA Cropland Data Layer | Annual corn mask, 30 m | 2008 to 2021 |
-| MODIS MOD13Q1 (Terra) | NDVI, 250 m, 16-day composites | 2008 to 2021 |
-| NASA POWER | Daily shortwave radiation, temperature, rainfall | 2008 to 2021 |
+| USDA NASS Quick Stats | County corn grain yields, bushels per acre | 2008 to 2024 |
+| USDA Cropland Data Layer, via the Planetary Computer | Annual corn mask, 30 m | 2008 to 2021 |
+| USDA Cropland Data Layer, via Source Cooperative | Annual corn mask, 30 m | 2022 to 2024 |
+| MODIS MOD13Q1 (Terra) | NDVI, 250 m, 16-day composites | 2008 to 2024 |
+| NASA POWER | Daily shortwave radiation, temperature, rainfall | 2008 to 2024 |
 | US Census cartographic boundaries | Counties | 2023 |
+
+2008 to 2021 is the training and cross-validation period. 2022 to 2024 is held
+back entirely, for the out-of-time test.
 
 Nothing in `data/` is committed. Every source is public and the scripts in
 `src/` rebuild it.
@@ -97,17 +111,38 @@ the share of it that the Cropland Data Layer marks as corn that year, using only
 pixels MODIS rates as reliable. The masks change every year, so the feature is
 NDVI over that year's corn, not over a fixed area.
 
-### Why it stops in 2021
+### Two sources for the corn map
 
-The Cropland Data Layer is read from Microsoft's Planetary Computer, whose copy
-ends in 2021. USDA has published through 2025, so later years can be downloaded
-directly.
+The Planetary Computer's copy of the Cropland Data Layer ends in 2021. For 2022
+on, the masks come from Source Cooperative's copy of the full 2008 to 2025
+record, an Icechunk Zarr store described as bit-identical to USDA's rasters.
 
-Later years also need separate treatment. Terra, which carries the MODIS sensor
-used here, had its last orbit correction in February 2020 and has drifted to an
-earlier overpass since, leaving its constellation in 2022. An earlier overpass
-changes the illumination, so NDVI after 2022 is not strictly comparable with the
-years the model learns from.
+Swapping sources was checked before it was used. 2021 was rebuilt from the new
+source for all 742 counties and compared with the original masks. In 671, no
+pixel differed by more than 0.01. In the other 71, a few pixels differed, 97% of them outside the county
+outline, where no weight is ever applied. The cause was on the original side:
+05 cut the corn map at each county's bounding box with no margin, so MODIS
+pixels across that edge were averaged from a sliver. Widening the new source's
+margin from 60 m to 500 m changed none of the differing pixels. The largest
+share of in-county corn weight affected anywhere was 0.031%, which moves a
+county's NDVI by well under 0.001. The 2008 to 2021 masks are kept as built so
+published results reproduce, and the 2022 to 2024 masks use the margin.
+
+The new store needs icechunk 2, which needs Python 3.12, so it is read from a
+separate small environment (`environment-cdl.yml`). Everything else runs in the
+main environment, unchanged.
+
+### Terra's drift, and why 2025 is missing
+
+Terra, which carries the MODIS sensor used here, had its last orbit correction
+in February 2020 and has drifted to an earlier overpass since. MOD13Q1 records
+the sun's zenith angle for each pixel, which rises when the overpass is earlier.
+For the late July composite over Story County, Iowa, it held between 28° and 30°
+from 2008 to 2022, then rose to 32.0° in 2023 and 35.2° in 2024.
+
+The Planetary Computer's MOD13Q1 stops on 26 June 2025, so there is no 2025
+season to test on. NASA's own archive would have it, at the cost of an
+Earthdata account, for the most drifted year of all.
 
 ### Why MODIS and not Sentinel-2
 
@@ -415,6 +450,75 @@ APAR rises from about 480 MJ/m² in 2008 to 560 to 580 from 2016 on, so NDVI alr
 carries much of the trend. Sensor drift or an improving crop mask could produce
 the same rise, and that has not been ruled out.
 
+That conclusion holds only inside the record. The next section shows it
+reversing once the model has to predict beyond it.
+
+### Seasons the model never saw
+
+Every model was trained on 2008 to 2021 and asked to predict 2022 to 2024, which
+it had never seen. Two schemes: every county, and each state predicted by
+models trained on the other seven. NASS published fewer county estimates each
+year (613, 570 and 487 county-years), so later years rest on fewer counties.
+
+Three test seasons are too few to resample, so the intervals below resample
+districts within each season. They describe spread across places, not
+uncertainty about future seasons in general.
+
+| Model | Every county | State held out | Mean error, every county |
+|---|---|---|---|
+| Gradient boosting, detrended | 21.4 [19.5, 23.3] | 23.9 [21.8, 26.2] | +8.5 |
+| Ridge regression | 23.1 [21.1, 25.2] | 24.3 [22.1, 26.5] | +10.5 |
+| Linear on peak NDVI | 26.0 [23.7, 28.4] | 27.6 [24.8, 30.8] | -14.0 |
+| Gradient boosting, raw yield | 26.3 [24.7, 27.9] | 28.7 [26.9, 30.7] | -15.7 |
+| Light use efficiency | 27.2 [24.8, 29.7] | 27.4 [25.0, 29.9] | -8.4 |
+| k × peak NDVI | 31.0 [29.1, 32.8] | 31.7 [29.8, 33.7] | -16.7 |
+| Trend line | 32.0 [29.1, 35.0] | 33.3 [30.4, 36.4] | +4.6 |
+
+**The earlier estimates mostly held.** Holding out years inside the record put
+gradient boosting at 19.1 [17.1, 21.4]; on the future it scored 21.4, at the top
+of that interval. Holding out a year and a state put it at 22.0 [19.9, 24.5]; on
+the future with the state held out it scored 23.9, inside the interval. The
+held-out-year scores were about 10% optimistic, a much smaller gap than the one
+between random folds and either.
+
+**Detrending decides the future.** Inside the record it made no measurable
+difference. Here the raw model is 4.9 [2.9, 7.0] worse, and its error grows each
+year as yields keep rising past anything it was trained on:
+
+![Mean error per test season, detrended against raw](figures/future_bias.png)
+
+A tree predicts the average of training yields that fell in a leaf, so it can
+never predict above the highest yields it saw. The detrended model predicts
+departures from a trend line and lets the line carry the level forward. Every
+model without a trend term underestimates the future (light use efficiency by
+8, the peak NDVI models by 14 to 17). Peak NDVI in 2022 to 2024 (0.852 to
+0.862) was no higher than in 2019 to 2021 (0.857) while yields kept rising, so
+the canopy alone did not carry the rise forward.
+
+**The trend line overshot.** Extended from 2008 to 2021, it put 2022 to 2024 at
+183, 186 and 189; the counties NASS reported came in at 177, 182 and 185. The
+detrended gradient boosting model overestimated 2022 and 2023 by about 14, more
+than the trend line did, and underestimated 2024 by 5. Why 2022 and 2023 ran
+high is not established.
+
+**No sign of the drift in the errors, which is not the same as no drift.** The
+sun zenith angle jumped from 29° in 2022 to 32° in 2023, and the detrended
+model's bias barely moved (+13.6 to +14.3). 2024, the most drifted year, had its
+lowest error (18.1). Weather differs between those seasons too, so this cannot
+rule a drift effect out; a direct test on forest NDVI is listed below.
+
+**Flexible against linear, again.** With every county predicted, gradient
+boosting beat ridge by 1.8 [0.8, 2.8]. With each state held out, the two were
+indistinguishable (0.4 [-0.8, 1.6]), as they were under every strict spatial
+holdout inside the record.
+
+**The light use efficiency model's edge over its control became measurable.**
+Inside the record it was 2.5 to 3.4 bushels better than k × peak NDVI and never
+clearly so. On the future it was 3.8 [0.6, 6.9] better with every county and
+4.4 [1.1, 7.5] with the state held out. Integrating absorbed light over the
+season held up beyond the record better than the single peak did. It still
+trails gradient boosting by 3.5 to 5.8.
+
 ---
 
 ## Corrections made along the way
@@ -435,6 +539,15 @@ Kept here because each one changed a number.
 - **The harvest index.** First set to 0.50, below the published range for these
   hybrids, then corrected to 0.55 from Ruiz et al. (2023). That changes only the
   uncalibrated model.
+- **Duplicate composites.** The Planetary Computer catalogue lists 2021's 14
+  September composite three times, so every county got three identical rows for
+  that date. Rebuilding the features without them changed no model feature
+  (largest difference 0.0). 06 now keeps one item per date, and 07 stops if
+  duplicates ever disagree.
+- **The mask edge.** The original masks cut the corn map at the county's
+  bounding box with no margin. Measured when the second source was checked, it
+  affects at most 0.031% of a county's corn weight, and is described under
+  "Two sources for the corn map".
 
 ---
 
@@ -480,17 +593,21 @@ repeating the comparison on 2024 and 2025 tests the sharper-mask argument
 directly. Two seasons is too few to train on, so those years are used for
 evaluation only.
 
-### Seasons the model has never seen
+### Measuring Terra's drift directly
 
-Train on 2008 to 2021 and predict 2022 to 2025. That needs the Cropland Data
-Layer from USDA's CroplandCROS (10 m in 2024 and 2025, averaged onto the MODIS
-grid as before), yields fetched again from NASS, and a check of Terra's orbit
-drift: NDVI over stable non-crop land compared before and after 2022, with any
-shift reported alongside every result. The same check would show whether the
-rise in APAR over 2008 to 2021 is real.
+The out-of-time errors show no step when the overpass moved, but weather
+changes between seasons too. The direct test is NDVI over land that should not
+change: forest pixels, fixed by one year's crop map, compared composite by
+composite from 2008 to 2024. A shift after 2022 beyond the year-to-year spread
+would be drift. The same series would show whether the rise in APAR over 2008
+to 2021 is in the canopy or in the sensor.
 
-NASA plans to wind down Terra and Aqua from late 2026 and points users to VIIRS.
-Moving the pipeline to VIIRS is the natural next step and is out of scope here.
+### 2025, and after Terra
+
+A 2025 season needs MOD13Q1 from NASA's archive rather than the Planetary
+Computer. NASA plans to wind down Terra and Aqua from late 2026 and points users
+to VIIRS. Moving the pipeline to VIIRS is the natural next step and is out of
+scope here.
 
 ### Smaller ones
 
@@ -537,7 +654,23 @@ NASS_API_KEY=your_key_here
 | `12_figures.py` | The figures in this README | seconds |
 | `13_tuning.py` | Nested tuning, three versions compared | about 45 minutes |
 
-`12_figures.py` draws the tuning figure only once `13_tuning.py` has run.
+For the out-of-time test, after the above:
+
+| Command | Does | Runtime |
+|---|---|---|
+| `python src/14a_probe_recent.py` (cdl environment) | Check the second corn map source and Terra after 2021 (optional) | minutes |
+| `python src/14_build_masks_recent.py --verify-all` (cdl environment) | Rebuild 2021 from the second source and compare every county (optional) | about 30 minutes |
+| `python src/14_build_masks_recent.py` (cdl environment) | Corn masks 2022 to 2024 | about 2 hours |
+| `python src/06_extract_ndvi.py --years 2022-2024` | NDVI 2022 to 2024 | about 2.5 hours |
+| `python src/01_fetch_yields.py --years 2022-2024 --out data/nass_corn_yields_recent.csv` | Yields 2022 to 2024, with a check for revisions | about a minute |
+| `python src/08_fetch_radiation.py --recent` | Radiation 2022 to 2024 | about 25 minutes |
+| `python src/07_features.py --years 2022-2024 --yields data/nass_corn_yields_recent.csv --out data/model_table_recent.parquet` | Features 2022 to 2024 | about a minute |
+| `python src/15_out_of_time.py` | Train on 2008 to 2021, predict 2022 to 2024 | seconds |
+
+The cdl environment is created with `conda env create -f environment-cdl.yml`.
+
+`12_figures.py` draws the tuning and out-of-time figures once `13_tuning.py`
+and `15_out_of_time.py` have run.
 
 Scripts 05 and 06 save as they go and skip finished years when rerun. Every
 script prints progress and writes a log to `logs/`.

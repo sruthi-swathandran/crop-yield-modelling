@@ -27,7 +27,7 @@ RES = ROOT / "results"
 DATA = ROOT / "data"
 
 # Okabe and Ito, readable with the common forms of colour blindness.
-C = {"gbm_detrended": "#0072B2", "ridge": "#E69F00", "lue_1": "#009E73",
+C = {"gbm_detrended": "#0072B2", "gbm_raw": "#D55E00", "ridge": "#E69F00", "lue_1": "#009E73",
      "peak_k": "#CC79A7", "peak_lin": "#56B4E9", "trend_only": "#999999"}
 LABEL = {"gbm_detrended": "Gradient boosting", "ridge": "Ridge regression",
          "lue_1": "Light use efficiency", "peak_k": "k x peak NDVI",
@@ -211,6 +211,34 @@ def fig_tuning(out):
     save(fig, out, "tuning.png")
 
 
+def fig_future(out):
+    d = pd.read_csv(RES / "future_by_year.csv")
+    d = d[d.scheme == "future"]
+    models = ["gbm_detrended", "gbm_raw", "trend_only"]
+    labels = {"gbm_detrended": "Gradient boosting, detrended",
+              "gbm_raw": "Gradient boosting, raw yield",
+              "trend_only": "Trend line alone"}
+    years = sorted(d.year.unique())
+    b = d.set_index(["model", "year"]).bias
+
+    fig, ax = plt.subplots(figsize=(7.5, 3.8))
+    x = np.arange(len(years))
+    for j, m in enumerate(models):
+        vals = [b[(m, y)] for y in years]
+        ax.bar(x + (j - 1) * 0.26, vals, 0.26, color=C.get(m, "#D55E00"),
+               label=labels[m])
+    ax.axhline(0, color="black", lw=0.8)
+    ax.set_xticks(x, [str(y) for y in years])
+    ax.set_ylabel("Mean error, bu/acre\n(prediction minus actual)")
+    ax.legend(frameon=False, loc="upper center", bbox_to_anchor=(0.5, -0.12), ncol=3,
+              fontsize=8)
+    last = years[-1]
+    ax.set_title(f"Trained on 2008 to 2021, the raw model underestimates {last} by "
+                 f"{-b[('gbm_raw', last)]:.0f} bushels;\nthe detrended model, by "
+                 f"{-b[('gbm_detrended', last)]:.0f}")
+    save(fig, out, "future_bias.png")
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", type=Path, default=ROOT / "figures")
@@ -224,6 +252,8 @@ def main() -> None:
     fig_in_season(args.out)
     if (RES / "tuning_choices.csv").exists():
         fig_tuning(args.out)
+    if (RES / "future_by_year.csv").exists():
+        fig_future(args.out)
 
 
 if __name__ == "__main__":

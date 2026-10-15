@@ -264,6 +264,16 @@ def main() -> None:
     args = ap.parse_args()
     tee_to("ndvi")
 
+    # Fail in the first second, not after the first year. A run in the
+    # wrong environment once extracted 34 minutes of 2022 and then could
+    # not save it because pyarrow was missing.
+    import io
+    try:
+        pd.DataFrame({"x": [1]}).to_parquet(io.BytesIO())
+    except ImportError as e:
+        raise SystemExit(f"cannot write parquet here ({e}). "
+                         f"Run this in the cropyield environment.")
+
     counties = gpd.read_file(COUNTIES, layer="counties")
     cat = pystac_client.Client.open(STAC)
 
@@ -277,7 +287,7 @@ def main() -> None:
             print(f"{y}: already done, skipping")
             continue
         mins = run_year(cat, counties, y)
-        if not args.all and mins:
+        if not args.all and not args.years and mins:
             print(f"\nOne year took {mins:.1f} min. "
                   f"Fourteen would be about {14*mins/60:.1f} hours.")
 
