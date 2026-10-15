@@ -128,10 +128,23 @@ def phenology(comp: np.ndarray, v: np.ndarray) -> dict | None:
 
 
 def main() -> None:
+    # Defaults build the 2008 to 2021 training table exactly as before.
+    # For the out-of-time test:
+    #   python src/07_features.py --years 2022-2024 \
+    #       --yields data/nass_corn_yields_recent.csv --out data/model_table_recent.parquet
+    import argparse
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--years", default="2008-2021")
+    ap.add_argument("--yields", type=Path, default=YIELDS)
+    ap.add_argument("--out", type=Path, default=OUT)
+    args = ap.parse_args()
+    y0, y1 = (int(x) for x in args.years.split("-"))
+
     tee_to("features")
-    files = sorted(NDVI_DIR.glob("ndvi_*.parquet"))
+    files = sorted(f for f in NDVI_DIR.glob("ndvi_*.parquet")
+                   if y0 <= int(f.stem.split("_")[1]) <= y1)
     if not files:
-        raise SystemExit(f"no NDVI files in {NDVI_DIR}; run 06 first")
+        raise SystemExit(f"no NDVI files for {y0}-{y1} in {NDVI_DIR}; run 06 first")
     print(f"NDVI files: {len(files)}  ({files[0].name} .. {files[-1].name})")
 
     ndvi = pd.concat([pd.read_parquet(f) for f in files], ignore_index=True)
@@ -206,8 +219,8 @@ def main() -> None:
               .rename("usable_fraction"))
 
     # --- join to yields -------------------------------------------
-    y = pd.read_csv(YIELDS, dtype={"fips": str})
-    y = y[y.year.between(2008, 2021)]       # CDL coverage, see 03
+    y = pd.read_csv(args.yields, dtype={"fips": str})
+    y = y[y.year.between(y0, y1)]
     print(f"  yield rows in period: {len(y):,}")
 
     table = (y.set_index(["fips", "year"])
@@ -228,7 +241,7 @@ def main() -> None:
     print(f"\n  mean yield by year:")
     print(by_year.round(1).to_string())
     print(f"  linear trend: {slope:+.2f} bu/acre/year "
-          f"({slope*(2021-2008):+.0f} across the period)")
+          f"({slope*(y1 - y0):+.0f} across the period)")
     print("  Not removed here. The modelling step decides and measures.")
 
     # --- checks ---------------------------------------------------
@@ -247,9 +260,9 @@ def main() -> None:
         r = table[col].corr(table.yield_bu_acre)
         print(f"  corr({col}, yield) = {r:+.3f}")
 
-    OUT.parent.mkdir(exist_ok=True)
-    table.to_parquet(OUT, index=False)
-    print(f"\nwritten: {OUT}  ({len(table.columns)} columns)")
+    args.out.parent.mkdir(exist_ok=True)
+    table.to_parquet(args.out, index=False)
+    print(f"\nwritten: {args.out}  ({len(table.columns)} columns)")
 
 
 if __name__ == "__main__":

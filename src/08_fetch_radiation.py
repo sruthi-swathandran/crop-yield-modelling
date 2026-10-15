@@ -200,7 +200,18 @@ def checks(out: pd.DataFrame, daily: pd.DataFrame) -> None:
 
 
 def main() -> None:
+    # --recent fetches 2022 to 2024 for the out-of-time test into its own
+    # folder and file, leaving the 2008 to 2021 data untouched.
+    global RAW, OUT, START, END
+    import argparse
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--recent", action="store_true")
+    if ap.parse_args().recent:
+        RAW = ROOT / "data" / "power" / "raw_recent"
+        OUT = ROOT / "data" / "weather_composites_recent.parquet"
+        START, END = "20220101", "20241231"
     tee_to("power")
+    print(f"{START} to {END}  ->  {OUT.name}")
     pts = centroids()
     download(pts)
     out, daily = aggregate()

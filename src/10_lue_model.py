@@ -121,18 +121,26 @@ def fill_curve(v: np.ndarray) -> np.ndarray:
     return np.interp(np.arange(v.size), np.flatnonzero(ok), v[ok])
 
 
-def lue_inputs(df: pd.DataFrame) -> pd.DataFrame:
+def end_members(df: pd.DataFrame):
     curve = df[base.CURVE].to_numpy(dtype="float64")
-    vals = curve[np.isfinite(curve)]
-    n02, n98 = np.percentile(vals, [2, 98])
+    return tuple(np.percentile(curve[np.isfinite(curve)], [2, 98]))
+
+
+def lue_inputs(df: pd.DataFrame, weather=WEATHER, ends=None) -> pd.DataFrame:
+    """ends: the NDVI end members to scale fAPAR with. Left as None they
+    come from df itself. For later seasons they must be passed in from the
+    training years, or the fAPAR scale would shift with the test data."""
+    curve = df[base.CURVE].to_numpy(dtype="float64")
+    n02, n98 = ends if ends is not None else end_members(df)
     print(f"  NDVI end members: 2nd percentile {n02:.3f}, "
-          f"98th percentile {n98:.3f}")
+          f"98th percentile {n98:.3f}"
+          f"{'  (passed in)' if ends is not None else ''}")
 
     filled = np.apply_along_axis(fill_curve, 1, curve)
     fpar = (FPAR_MAX - FPAR_MIN) * (sr(filled) - sr(n02)) / (sr(n98) - sr(n02)) + FPAR_MIN
     fpar = np.clip(fpar, FPAR_MIN, FPAR_MAX)
 
-    w = pd.read_parquet(WEATHER)
+    w = pd.read_parquet(weather)
     sw = (w.pivot_table(index=["fips", "year"], columns="composite",
                         values="sw_mj_m2")
           .reindex(pd.MultiIndex.from_frame(df[["fips", "year"]])))

@@ -36,6 +36,7 @@ that none exist. Anything that will not parse as a number is counted
 and reported by state and year rather than silently dropped.
 """
 
+import argparse
 import os
 import time
 from pathlib import Path
@@ -93,6 +94,19 @@ def fetch_state(state: str) -> pd.DataFrame:
 
 
 def main() -> None:
+    # Defaults reproduce the original fetch. For the out-of-time test:
+    #   python src/01_fetch_yields.py --years 2022-2024 --out data/nass_corn_yields_recent.csv
+    global YEAR_FROM, YEAR_TO, OUT
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--years")
+    ap.add_argument("--out", type=Path)
+    args = ap.parse_args()
+    if args.years:
+        YEAR_FROM, YEAR_TO = (int(x) for x in args.years.split("-"))
+    if args.out:
+        OUT = args.out if args.out.is_absolute() else Path.cwd() / args.out
+    print(f"years {YEAR_FROM}-{YEAR_TO}  ->  {OUT}")
+
     frames = []
     for state in STATES:
         df = fetch_state(state)
@@ -209,6 +223,21 @@ def main() -> None:
     # differently-composed sample than a held-out early one.
     print("\n  mean yield by year (2012 should be the trough):")
     print(out.groupby("year").yield_bu_acre.mean().round(1).to_string())
+
+    # NASS revises published estimates. Where this fetch overlaps the
+    # original one, say whether any county-year changed, because the
+    # training data came from the original.
+    original = Path(__file__).resolve().parent.parent / "data" / "nass_corn_yields.csv"
+    if OUT != original and original.exists():
+        old = pd.read_csv(original, dtype={"fips": str})
+        both = out.merge(old[["fips", "year", "yield_bu_acre"]],
+                         on=["fips", "year"], suffixes=("", "_original"))
+        if len(both):
+            changed = both[(both.yield_bu_acre - both.yield_bu_acre_original).abs() > 1e-9]
+            print(f"\n  overlap with the original fetch: {len(both):,} county-years, "
+                  f"{len(changed)} revised since")
+            if len(changed):
+                print(changed.head(10).to_string(index=False))
 
     OUT.parent.mkdir(exist_ok=True)
     out.to_csv(OUT, index=False)
