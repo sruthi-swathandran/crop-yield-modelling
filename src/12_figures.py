@@ -239,6 +239,34 @@ def fig_future(out):
     save(fig, out, "future_bias.png")
 
 
+def fig_drift(out):
+    r = pd.read_csv(RES / "drift_forest_by_year_stable_2008_2021.csv", index_col=0)
+    ref = r.loc[2008:2021]
+    sd = ref.anomaly.std()
+    sza_ref = ref.sza.mean()
+    last = r.index.max()
+
+    fig, ax = plt.subplots(figsize=(8, 3.8))
+    cols = ["#999999" if y <= 2021 else "#0072B2" for y in r.index]
+    ax.bar(r.index, r.anomaly, color=cols)
+    ax.axhspan(ref.anomaly.mean() - 2 * sd, ref.anomaly.mean() + 2 * sd,
+               color="#eeeeee", zorder=0)
+    ax.axhline(0, color="black", lw=0.8)
+    ax.set_ylabel("Forest NDVI anomaly")
+    ax.set_xticks(r.index, [str(y) for y in r.index], fontsize=8)
+    ax2 = ax.twinx()
+    ax2.plot(r.index, r.sza, "o-", color="#D55E00", ms=3, lw=1.2)
+    ax2.set_ylabel("Sun zenith at overpass (deg)", color="#D55E00")
+    ax2.spines["top"].set_visible(False)
+    ax.set_title(f"The sun was {r.loc[last, 'sza'] - sza_ref:.0f} degrees lower at Terra's "
+                 f"overpass in {last} than in 2008 to 2021,\nand forest NDVI stayed "
+                 f"inside its normal range (z {r.loc[last, 'z_vs_2008_2021']:+.1f})")
+    ax.text(0, -0.2, "Pure stable forest pixels in 80 counties, mid July to mid August. "
+            "Grey band: 2008 to 2021 mean +/- 2 sd. Blue: years after training.",
+            transform=ax.transAxes, fontsize=8, color="#666666")
+    save(fig, out, "drift_forest.png")
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", type=Path, default=ROOT / "figures")
@@ -254,6 +282,8 @@ def main() -> None:
         fig_tuning(args.out)
     if (RES / "future_by_year.csv").exists():
         fig_future(args.out)
+    if (RES / "drift_forest_by_year_stable_2008_2021.csv").exists():
+        fig_drift(args.out)
 
 
 if __name__ == "__main__":

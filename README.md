@@ -54,6 +54,12 @@ yield of 161. Brackets are 95% intervals from resampling whole seasons.
    2024 against the 19.1 that holding out years had promised, and 23.9 with
    the state held out as well, against 22.0. Both land at or inside the upper
    edge of the earlier intervals.
+10. **Terra's drifting orbit has not measurably changed the NDVI.** Over
+    pure, stable forest the sun stood 3 to 6 degrees lower at overpass in 2022
+    to 2024, and forest NDVI stayed inside its normal year-to-year range. A
+    shift larger than about 0.018 would have shown. Forest NDVI also rose over
+    2008 to 2021, almost as much as corn's did, so the greening of corn in
+    the satellite record cannot be attributed to the crop.
 
 Each is set out with its evidence below.
 
@@ -139,6 +145,9 @@ in February 2020 and has drifted to an earlier overpass since. MOD13Q1 records
 the sun's zenith angle for each pixel, which rises when the overpass is earlier.
 For the late July composite over Story County, Iowa, it held between 28° and 30°
 from 2008 to 2022, then rose to 32.0° in 2023 and 35.2° in 2024.
+
+Whether that changes the NDVI was tested directly, under "Has the drift
+changed the NDVI?" below. It has not, measurably.
 
 The Planetary Computer's MOD13Q1 stops on 26 June 2025, so there is no 2025
 season to test on. NASA's own archive would have it, at the cost of an
@@ -445,13 +454,15 @@ outer ones.
 Yields rise 2.9 bushels per acre per year across this period. Removing a fitted
 trend before modelling changed RMSE by 0.0 to 0.25 bushels under every scheme,
 with every interval spanning zero. The trend alone explains about 11% of the
-variance, since most variation is between counties rather than years, and season
-APAR rises from about 480 MJ/m² in 2008 to 560 to 580 from 2016 on, so NDVI already
-carries much of the trend. Sensor drift or an improving crop mask could produce
-the same rise, and that has not been ruled out.
+variance, since most variation is between counties rather than years.
 
-That conclusion holds only inside the record. The next section shows it
-reversing once the model has to predict beyond it.
+An earlier draft added that corn NDVI rises over the period (season APAR from
+about 480 MJ/m² in 2008 to 560 to 580 from 2016 on), so NDVI already carries
+the trend. The forest test below undercuts that: forest NDVI rose over the same
+years, by more than half as much, so the rise cannot be credited to the crop.
+
+Either way, that conclusion holds only inside the record. The next section shows
+it reversing once the model has to predict beyond it.
 
 ### Seasons the model never saw
 
@@ -501,11 +512,52 @@ detrended gradient boosting model overestimated 2022 and 2023 by about 14, more
 than the trend line did, and underestimated 2024 by 5. Why 2022 and 2023 ran
 high is not established.
 
-**No sign of the drift in the errors, which is not the same as no drift.** The
-sun zenith angle jumped from 29° in 2022 to 32° in 2023, and the detrended
-model's bias barely moved (+13.6 to +14.3). 2024, the most drifted year, had its
-lowest error (18.1). Weather differs between those seasons too, so this cannot
-rule a drift effect out; a direct test on forest NDVI is listed below.
+**No sign of the drift in the errors.** The sun zenith angle at Story County
+jumped from 29° in 2022 to 32° in 2023, and the detrended model's bias barely
+moved (+13.6 to +14.3). 2024, the most drifted year, had its lowest error
+(18.1). Weather differs between seasons too, so errors alone cannot settle it.
+The direct test is the next section.
+
+### Has the drift changed the NDVI?
+
+Corn cannot answer this, because the crop changes every year. Forest mostly
+does not. So the test follows NDVI over forest that stayed forest:
+
+- **Pixels.** 250 m pixels at least 90% forest in both the 2008 and 2021
+  Cropland Data Layer, judged at 30 m before averaging (classes 63 and 141 to
+  143). Requiring both years removed 16.9% of the pure forest pixels: stands
+  cleared in between, and pixels the two maps simply classify differently.
+- **Counties.** The 80 with the most such pixels: 41 in Missouri, 20 in Ohio,
+  9 in Indiana, 5 in Minnesota, 3 in South Dakota and 2 in Illinois.
+- **Measure.** Mean NDVI of reliable pixels in the two midsummer composites
+  (about 12 July to 12 August), as an anomaly from each county's 2008 to 2021
+  mean, averaged across counties for each year.
+
+![Forest NDVI anomaly and sun zenith at overpass by year](figures/drift_forest.png)
+
+Over these forests the sun zenith angle at overpass averaged 25.5° from 2008
+to 2021, never above 26.6°. It was 28.5° in 2022, 29.6° in 2023 and 31.6° in
+2024. Forest NDVI in those years was 0.7, 0.5 and 0.3 standard deviations from
+the 2008 to 2021 mean, the first two below and the last above, all well inside
+the normal range. The one year that falls outside it is 2012, the drought. In
+these forests the weather moves NDVI more than the overpass change has.
+
+The test has limits. Forest NDVI varies by about ±0.018 (two standard
+deviations) from year to year, so a shift smaller than that would not show.
+In a pooled linear fit, 0.01 of peak NDVI is worth about 5 bushels of corn, so
+a drift effect of a few bushels cannot be ruled out. Forest and crop canopies
+also differ in structure, and a drift effect on one need not equal the effect
+on the other.
+
+**The forest greened too.** Over 2008 to 2021 forest NDVI rose 0.0013 a year
+[0.0006, 0.0025], against 0.0023 [0.0011, 0.0050] for corn peak NDVI, both
+with intervals from resampling years. The difference, 0.0010 [-0.0001, 0.0027],
+is not distinguishable from zero, and forest and corn NDVI move together from
+year to year (correlation 0.88). Whatever raised corn NDVI over the period,
+whether weather, the sensor or something regional, raised forest NDVI nearly as
+much. A first version of this test used forest from the 2021 map alone and gave
+nearly identical results: the same forest trend to within 0.0001 a year, and
+the same 2022 to 2024 z-scores to within 0.03.
 
 **Flexible against linear, again.** With every county predicted, gradient
 boosting beat ridge by 1.8 [0.8, 2.8]. With each state held out, the two were
@@ -593,14 +645,11 @@ repeating the comparison on 2024 and 2025 tests the sharper-mask argument
 directly. Two seasons is too few to train on, so those years are used for
 evaluation only.
 
-### Measuring Terra's drift directly
+### A drift test with an independent sensor
 
-The out-of-time errors show no step when the overpass moved, but weather
-changes between seasons too. The direct test is NDVI over land that should not
-change: forest pixels, fixed by one year's crop map, compared composite by
-composite from 2008 to 2024. A shift after 2022 beyond the year-to-year spread
-would be drift. The same series would show whether the rise in APAR over 2008
-to 2021 is in the canopy or in the sensor.
+The forest test can only see shifts larger than about 0.018 NDVI. Comparing
+MODIS with VIIRS over the same corn pixels, before and after 2022, could detect
+smaller ones, using an independent sensor with its own orbit history.
 
 ### 2025, and after Terra
 
@@ -666,6 +715,7 @@ For the out-of-time test, after the above:
 | `python src/08_fetch_radiation.py --recent` | Radiation 2022 to 2024 | about 25 minutes |
 | `python src/07_features.py --years 2022-2024 --yields data/nass_corn_yields_recent.csv --out data/model_table_recent.parquet` | Features 2022 to 2024 | about a minute |
 | `python src/15_out_of_time.py` | Train on 2008 to 2021, predict 2022 to 2024 | seconds |
+| `python src/16_drift_check.py` | Forest NDVI 2008 to 2024, testing Terra's drift | about 2.5 hours |
 
 The cdl environment is created with `conda env create -f environment-cdl.yml`.
 
